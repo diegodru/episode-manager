@@ -45,10 +45,10 @@ NOTE: __identifiers are represented as characters for visual distinction to posi
 {
   "episode": 3,
   "parts": [
-    'k',
-    'a',
-    'j',
-    'c'
+    "k",
+    "a",
+    "j",
+    "c"
   ]
 }
 ```
@@ -59,37 +59,31 @@ Code examples are provided in the [index.php](./index.php) file.
 
 # Do you have another approach on how this can be tackled efficient and reliably at scale?
 
-## Queue a method for when a large requests come in, then notify the calling user when it is done and warn any other collaborating user who attempts to queue another method that one is currently being processed.
+### Queuing method calls 
 
-## Concurrency is always an option with divide and conquer.
+Asynchronously queuing methods for when a large requests come in can improve developer experience. 
 
-## Create an index on the parts table if using a database.
+then notify the calling user when it is done and warn any other collaborating user who attempts to queue another method that one is currently being processed.
 
-## Attempt to insert at constant time O(1)
+### Concurrency is always an option with divide and conquer.
+
+### Create an index on the parts table if using a database.
+
+### Attempt to insert at constant time O(1)
 
 Worst case scenario, an insertion at the beginning would require to iterate over every part of an episode to update the position, making the time it takes to insert depend on the number of parts registered O(n). This could be costly if the system has episodes with a significant number of parts registered.
 
-To reduce the potentially costly lapse to insert, the implementation could rely on the following:
+To reduce the potentially costly lapse to insert, a restructure of the data can be considered. The implementation could rely on the following:
 
-### Fractional positioning indices
+#### Fractional positioning indices
 
 using floating point numbers to allow for fractional indexing on the position field could achieve constant time when inserting a new part in between. returning only an ordered array of part objects encapsulating the position field on the server side. using 32 bits floating point numbers for small systems and extending to 64 or even 128 bits for much larger systems.
 
 After inserting several Parts between 2.0 and 3.0, the gaps may become too small to continue. In this case, you can re-normalize (or re-index) the order values occasionally by recalculating new, evenly spaced numbers.
 re-normalizing is a relatively rare operation and is only necessary when you exhaust the available space between two order values
 
-The implementation for the fractional indexing is provided below:
+The implementation for the fractional indexing can be found in the [fractional.php](./fractional.php) file.
 
-```
-function insert($episodeId, $partId, $data) {
-}
-
-function delete($episodeId, $partId) {
-}
-
-function sort($episodeId, $partId) {
-}
-```
-### Linked list structure with a map representation
+#### Linked list structure with a map representation
 
 Another approach for an attempt at constant time when inserting can include a linked list-like structure rather than registering positions. Returning an object instead of a list of parts where each key is the unique identifier to a map for the part data as its value which in part (no pun intended) has a key (i.e. "next") containing the id of the following part as its value. This way, the user can parse the structure as a hash map (dictionary) to easily iterate over the parts in the intended order. Although, this method would place the burden of sorting onto the user who would require to locally restructure the data for further efficient access. Moreover, this method would hinder performance for smaller systems as hashing identifiers would be more expensive than iterating over a small array.
