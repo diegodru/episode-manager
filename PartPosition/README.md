@@ -18,7 +18,11 @@ If the part is placed:
 
 ### The Sort Method:
 
-NOTE: The sort method is assumed to allow the user to reposition parts by providing an ordered array rather than sort by executing a closure (or by providing an expression). This enables the actual sorting by analyzing content be done locally on the user's end to then send the result to the server.
+> [!NOTE] 
+> The sort method is assumed to allow the user to reposition parts by providing
+> an ordered array rather than sort by executing a closure (or by providing an
+> expression). This enables the actual sorting by analyzing content be done
+> locally on the user's end to then send the result to the server.
 
 To handle sorting with the developer experience in mind, the expected payload could include an array with the current position values (or the parts' composite ids) of the parts wished to sort in the desired order. The payload needn't to include all parts of an episode, only the parts wished to be repositioned. The server would be responsible to update the position field of the parts included in the array with the index in which its current position value (or the part's composite id) is found within the array.
 
@@ -40,7 +44,9 @@ This approach would be stochastic as each call would with the same body would no
 
 A deterministic approach could use the parts' identifiers, like so:
 
-NOTE: __identifiers are represented as characters for visual distinction to positions__
+> [!NOTE]  
+> Identifiers are represented as characters for visual distinction to positions
+
 ```JSON
 {
   "episode": 3,
@@ -82,8 +88,40 @@ using floating point numbers to allow for fractional indexing on the position fi
 After inserting several Parts between 2.0 and 3.0, the gaps may become too small to continue. In this case, you can re-normalize (or re-index) the order values occasionally by recalculating new, evenly spaced numbers.
 re-normalizing is a relatively rare operation and is only necessary when you exhaust the available space between two order values
 
-The implementation for the fractional indexing can be found in the [fractional.php](./fractional.php) file.
+An implementation for the fractional indexing can be found in the [fractional.php](./fractional.php) file.
 
-#### Linked list structure with a map representation
+#### Doubly Linked list structure with a map representation
 
-Another approach for an attempt at constant time when inserting can include a linked list-like structure rather than registering positions. Returning an object instead of a list of parts where each key is the unique identifier to a map for the part data as its value which in part (no pun intended) has a key (i.e. "next") containing the id of the following part as its value. This way, the user can parse the structure as a hash map (dictionary) to easily iterate over the parts in the intended order. Although, this method would place the burden of sorting onto the user who would require to locally restructure the data for further efficient access. Moreover, this method would hinder performance for smaller systems as hashing identifiers would be more expensive than iterating over a small array.
+Another approach for an attempt at constant time when inserting can include a doubly linked list-like structure rather than registering positions. Returning an object instead of a list of parts where each key is the unique identifier to a map for the part data as its value which in part (no pun intended) has keys (i.e. `next` and `prev`) containing the id of the following and previous part as their values. This way, the user can parse the structure as a hash map (dictionary) to easily iterate over the parts in the intended order. Although, this method would place the burden of sorting onto the user who would require to locally restructure the data and cache it for further efficient access. Moreover, this method would hinder performance for smaller systems as hashing identifiers would be more expensive than iterating over a small array.
+
+The structure for a requested episode would follow a structure like the following:
+```JSON
+{
+    "a": {
+        ...data,
+        "prev": null,
+        "next": "d"
+    },
+    "b": {
+        ...data,
+        "prev": "c",
+        "next": null
+    },
+    "c": {
+        ...data,
+        "prev": "d",
+        "next": "b"
+    },
+    "d": {
+        ...data,
+        "prev": "a",
+        "next": "c"
+    }
+}
+```
+
+To make finding the last part more efficient, the `next` field would be indexed for quick lookup which can make finding the register with its `next`
+
+The insertion would also need to be reimplemented. Rather than provide a position to where the part should be inserted, the user would provide the id of the part that should link to the newly added part.
+
+An implementation for the fractional indexing can be found in the [fractional.php](./fractional.php) file.
