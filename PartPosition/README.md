@@ -24,9 +24,19 @@ If the part is placed:
 > expression). This enables the actual sorting by analyzing content be done
 > locally on the user's end to then send the result to the server.
 
-To handle sorting with the developer experience in mind, the expected payload could include an array with the current position values (or the parts' composite ids) of the parts wished to sort in the desired order. The payload needn't to include all parts of an episode, only the parts wished to be repositioned. The server would be responsible to update the position field of the parts included in the array with the index in which its current position value (or the part's composite id) is found within the array.
+To handle sorting with the developer experience in mind, the expected payload
+could include an array with the current position values (or the parts'
+composite ids) of the parts wished to sort in the desired order. The payload
+needn't to include all parts of an episode, only the parts wished to be
+repositioned. The server would be responsible to update the position field of
+the parts included in the array with the index in which its current position
+value (or the part's composite id) is found within the array.
 
-Then, the remaining parts not included in the array (iterating from the lowest position value to the highest) would have their position field updated to a cached integer (with starting value equal to the length of the array) and increased by one with each successive update.
+> [!IMPORTANT]
+> The remaining parts not included in the array (iterating from the lowest
+> position value to the highest) would have their position field updated to a
+> cached integer (with starting value equal to the length of the array) and
+> increased by one with each successive update.
 
 ```JSON
 {
@@ -45,7 +55,7 @@ This approach would be stochastic as each call would with the same body would no
 A deterministic approach could use the parts' identifiers, like so:
 
 > [!NOTE]  
-> Identifiers are represented as characters for visual distinction to positions
+> Identifiers are represented as characters for visual a distinction to positions
 
 ```JSON
 {
@@ -92,7 +102,20 @@ An implementation for the fractional indexing can be found in the [fractional.ph
 
 #### Doubly Linked list structure with a map representation
 
-Another approach for an attempt at constant time when inserting can include a doubly linked list-like structure rather than registering positions. Returning an object instead of a list of parts where each key is the unique identifier to a map for the part data as its value which in part (no pun intended) has keys (i.e. `next` and `prev`) containing the id of the following and previous part as their values. This way, the user can parse the structure as a hash map (dictionary) to easily iterate over the parts in the intended order. Although, this method would place the burden of sorting onto the user who would require to locally restructure the data and cache it for further efficient access. Moreover, this method would hinder performance for smaller systems as hashing identifiers would be more expensive than iterating over a small array.
+Another approach for an attempt at constant time when inserting can include a
+doubly linked list-like structure rather than registering positions. Returning
+an object upon a request instead of a list of parts. Each key is the unique
+identifier to a map for the part data as its value which in part (no pun
+intended) has keys (i.e. `next` and `prev`) containing the id of the following
+and previous part as their values. This way, the user can parse the structure
+as a hash map (dictionary) to easily iterate over the parts in the intended
+order. 
+
+> [!WARNING]
+> This method would place the burden of sorting onto the user who would require
+> to locally restructure the data and cache it for further efficient access.
+> Moreover, this method would hinder performance for smaller systems as hashing
+> identifiers would be more expensive than iterating over a small array.
 
 The structure for a requested episode would follow a structure like the following:
 ```JSON
